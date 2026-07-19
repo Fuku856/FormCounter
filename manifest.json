@@ -2,12 +2,9 @@
   "manifest_version": 3,
   "name": "__MSG_extName__",
   "description": "__MSG_extDesc__",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "default_locale": "ja",
   "minimum_chrome_version": "112",
-
-  "update_url": "https://fuku856.github.io/FormCounter/update.xml",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoc8Wtz/jmZZ5LksZDYGKHZ3O8DoYdftDjMo19Y2LFTjtXnvJNz5ls43ind+YE4SJZECcSHAEw1jGgIdhAnFnrrLwn8BRABijddnumt/iqzDpm8MgFiP/QzVyWBi2D3EaPNZW5XbSKDX6cBTjhuWFp/XTKPHrbQHTXR6o62scf4MKTr+1Ipmt/PqT8CPej4T5+E4TGIlwzaInupZ1DaoWAVFzojyyVYjrkwqucIJyahqe+mZOgIK6awYsuE/x2B3c4TEKJVHe0ug3nJh1CLEv62Nhno6Gib7XF/9MCIx9gyct8Eo73jpqu/O8yaE6yUbwkdx5WZZniHuINZkYjlPa8wIDAQAB",
 
   "permissions": ["storage"],
 
