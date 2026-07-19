@@ -1,8 +1,12 @@
 // content script の入口。イベント配線と更新ループ。
 //
-// この PR ではパソコン向けの配置まで。可視領域はレイアウトビューポートを
-// 使い、文字サイズは固定。visualViewport への追随とレスポンシブな
-// サイズ調整は次の PR で入れる。
+// 流れ:
+//   focusin (capture) → 自由記述欄か判定 (fields.js)
+//     → rAF で update() → 文字数 (counter.js) と座標 (position.js) を求め、
+//       Shadow DOM のバッジへ反映 (badge.js)
+//
+// 状態は「今フォーカスしている入力欄」1 つだけ。update() は毎回 value と
+// 矩形を読み直すので、差分管理は持たない。
 (function () {
   const FC = globalThis.FC;
 
