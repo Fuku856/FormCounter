@@ -76,13 +76,16 @@
 
     <script src="../src/common/defaults.js"></script>
     <script src="../src/common/counter.js"></script>
+    <script src="../src/content/position.js"></script>
     <script src="cases.js"></script>
+    <script src="cases-position.js"></script>
     <script>
       (function () {
         const rows = document.getElementById('rows');
+        const all = [...FC_CASES, ...FC_CASES_POSITION];
         let pass = 0;
 
-        for (const c of FC_CASES) {
+        for (const c of all) {
           let actual;
           try {
             actual = c.run();
@@ -106,9 +109,9 @@
         }
 
         const summary = document.getElementById('summary');
-        const allPass = pass === FC_CASES.length;
+        const allPass = pass === all.length;
         summary.className = allPass ? 'pass' : 'fail';
-        summary.textContent = `${pass}/${FC_CASES.length} 件成功` + (allPass ? '' : ' — 失敗あり');
+        summary.textContent = `${pass}/${all.length} 件成功` + (allPass ? '' : ' — 失敗あり');
       })();
     </script>
   </body>
