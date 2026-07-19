@@ -1,0 +1,7 @@
+# リポジトリ内では改行を LF に統一する（チェックアウト時は各環境に任せる）
+* text=auto eol=lf
+
+# バイナリ
+*.png binary
+*.crx binary
+*.zip binary

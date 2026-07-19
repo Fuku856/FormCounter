@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "FormCounter",
+    "description": "Extension name"
+  },
+  "extDesc": {
+    "message": "Shows a live character count on Google Forms free-text fields.",
+    "description": "Extension description"
+  }
+}
