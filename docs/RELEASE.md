@@ -7,32 +7,22 @@
 
 ## 手順
 
-### 1. バージョンを上げる
-
-```sh
-node tests/run.js
-node tools/check-manifest.js
-node tools/bump-version.js 0.2.0
-git commit -am "v0.2.0"
-git push
-```
-
-### 2. Actions からリリースを実行する
-
 [Actions → Release](https://github.com/Fuku856/FormCounter/actions/workflows/release.yml)
-→ **Run workflow**
+→ **Run workflow** で、タグ名を入力するだけです。
 
-| | 選ぶもの |
-| --- | --- |
-| 新しくリリースする | Use workflow from: `main` / tag: `v0.2.0`（ワークフローが作成します） |
-| 既存タグでやり直す | Use workflow from: そのタグ / tag: 同じ名前（zip を差し替えます） |
+| | 選ぶもの | 起きること |
+| --- | --- | --- |
+| 新しくリリースする | Use workflow from: `main`<br>tag: `v0.2.1` | manifest の version を `0.2.1` に更新して main にコミットし、タグを作って Release を出す |
+| やり直す | Use workflow from: `main`<br>tag: 既存のタグ名 | 何も書き換えず、そのタグの内容で zip を作り直して差し替える |
 
-タグを手で打つ必要はありません。入力したタグが無ければ、実行対象のコミットに
-注釈付きタグを作成して push します。
+version の更新・コミット・タグ付けはワークフローが行うので、手元での準備は要りません。
+手元で先に `bump-version.js` を実行してあった場合は、それを尊重してそのまま進みます。
 
-### 3. 確認
+**実行後は手元で `git pull` してください。**main にコミットが積まれています。
 
-- [ ] Release に `formcounter-0.2.0.zip` が添付されている
+### 確認
+
+- [ ] Release に `formcounter-0.2.1.zip` が添付されている
 - [ ] 展開したフォルダを読み込んで、Google フォームで動く
       （[docs/VERIFICATION.md](VERIFICATION.md)）
 
@@ -48,10 +38,12 @@ zip を展開したフォルダを `chrome://extensions` の
 
 ## つまずきやすいところ
 
-- **タグと `manifest.json` の version がズレるとワークフローが失敗します。**
-  `bump-version.js` を通していれば起きません。
-- **タグを先に push してからバージョンを上げると噛み合いません。**
-  順序は「version を上げて push」→「Actions を実行」です。
+- **現在の version 以下のタグ名を入れると失敗します。**
+  バージョンを下げると、どの zip が新しいのか分からなくなるためです。
+- **新しいタグを作るときは、タグではなくブランチから実行してください。**
+  main にコミットを積むため、タグを選んで実行すると失敗します。
+  やり直し（既存タグ）のときはコミットしないので、どちらから実行しても構いません。
+- **実行後の `git pull` を忘れると、次の作業で衝突します。**
 
 ## なぜ zip なのか
 

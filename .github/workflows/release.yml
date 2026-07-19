@@ -1,8 +1,11 @@
 # 配布用 zip を作って GitHub Release に添付する。
 # Actions タブから手動で実行し、タグ名を入力する。
 #
-#   既存タグでやり直す … 「Use workflow from」でそのタグを選び、同じ名前を入力
-#   新しく切る         … main を選び、新しいタグ名を入力（このワークフローが作成する）
+#   新しくリリースする … main から実行し、新しいタグ名を入力。
+#                        manifest の version をそれに合わせて更新し、
+#                        コミット・タグ作成・Release までまとめて行う。
+#   やり直す           … 既に同名のタグがある場合は何も書き換えず、
+#                        そのタグの内容で zip を作り直して差し替える。
 #
 # zip は「パッケージ化されていない拡張機能を読み込む」で使う。展開したフォルダを
 # そのまま指定できるよう、余計なファイルは入れない。
@@ -12,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'タグ名（例: v0.2.0）。存在しなければ実行対象のコミットに作成します'
+        description: 'タグ名（例: v0.2.1）。無ければ manifest の version をこれに合わせて作成します'
         required: true
         type: string
 
@@ -31,45 +34,83 @@ jobs:
         with:
           node-version: 22
 
+      - name: タグ名を検査し、既存かどうか判定する
+        id: tag
+        run: |
+          tag='${{ inputs.tag }}'
+          case "$tag" in
+            v[0-9]*) ;;
+            *) echo "タグは v+数字 で始めてください（入力: $tag）" >&2; exit 1 ;;
+          esac
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "タグ $tag は既にあります。version は変更せず zip を作り直します。"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "タグ $tag は未作成です。version を ${tag#v} に上げて作成します。"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: 既存タグの内容を取り出す
+        if: steps.tag.outputs.exists == 'true'
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          git checkout --detach "$TAG"
+          actual=$(node -p "require('./manifest.json').version")
+          if [ "$actual" != "$VERSION" ]; then
+            echo "タグ $TAG の manifest の version は $actual で、タグ名と一致しません。" >&2
+            exit 1
+          fi
+
+      - name: version を上げる
+        if: steps.tag.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          # コミットを積むのでブランチから実行されている必要がある。
+          if [ "${{ github.ref_type }}" != "branch" ]; then
+            echo "新しいタグを作るときは、タグではなくブランチ（main）から実行してください。" >&2
+            exit 1
+          fi
+          current=$(node -p "require('./manifest.json').version")
+          if [ "$current" = "$VERSION" ]; then
+            # 手元で先に上げてあった場合。何もしないでタグ付けに進む。
+            echo "manifest は既に $VERSION です。version は変更しません。"
+          else
+            # 現在の version 以下ならここで失敗する（下げると配布物が紛らわしくなる）。
+            node tools/bump-version.js "$VERSION"
+          fi
+
+      # 検証は push より前に行う。ここで落ちれば main もタグも汚れない。
       - name: 検証
         run: |
           node tools/check-manifest.js
           node tests/run.js
 
-      - name: タグと manifest の version が一致するか確認
-        id: check
-        run: |
-          tag='${{ inputs.tag }}'
-          case "$tag" in
-            v*) ;;
-            *) echo "タグは v で始めてください（入力: $tag）" >&2; exit 1 ;;
-          esac
-          version=$(node -p "require('./manifest.json').version")
-          if [ "${tag#v}" != "$version" ]; then
-            echo "タグ $tag に対し manifest の version は $version です。" >&2
-            echo "node tools/bump-version.js ${tag#v} を実行して push してから再実行してください。" >&2
-            exit 1
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: タグが無ければ作成する
+      - name: コミットしてタグを作る
+        if: steps.tag.outputs.exists == 'false'
         env:
-          TAG: ${{ steps.check.outputs.tag }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
-          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-            echo "タグ $TAG は既にあります。作成せず、そのまま使います。"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "version の変更はありません。現在の HEAD にタグを作ります。"
           else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag -a "$TAG" -m "$TAG"
-            git push origin "$TAG"
-            echo "タグ $TAG を $(git rev-parse --short HEAD) に作成しました。"
+            git commit -am "v$VERSION"
           fi
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "HEAD:${{ github.ref_name }}"
+          git push origin "$TAG"
+          echo "::notice::${{ github.ref_name }} に v$VERSION を積みました。手元で git pull してください。"
 
       - name: zip を作る
         env:
-          VERSION: ${{ steps.check.outputs.version }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           mkdir -p dist/formcounter
           cp -r manifest.json _locales icons src dist/formcounter/
@@ -81,8 +122,8 @@ jobs:
       - name: Release に添付する
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.check.outputs.tag }}
-          VERSION: ${{ steps.check.outputs.version }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           asset="dist/formcounter-${VERSION}.zip"
           if gh release view "$TAG" >/dev/null 2>&1; then
