@@ -49,4 +49,6 @@ if (updated === raw) {
 fs.writeFileSync(manifestPath, updated);
 
 console.log(`OK  version ${current} -> ${next}`);
-console.log(`    次: git commit -am "v${next}" && git tag v${next} && git push --follow-tags`);
+// タグは注釈付き (-a) で作る。軽量タグは --follow-tags で push されず、
+// 「main だけ進んでリリースが走らない」という分かりにくい失敗になる。
+console.log(`    次: git commit -am "v${next}" && git tag -a v${next} -m "v${next}" && git push --follow-tags`);

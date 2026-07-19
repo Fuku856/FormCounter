@@ -31,6 +31,15 @@ node tools/crx-id.js formcounter.pem
 
 - Secrets に `CRX_PRIVATE_KEY` を追加し、`formcounter.pem` の中身を貼る
 - Settings → Pages → Source を **GitHub Actions** にする
+- Settings → Environments → `github-pages` → Deployment branches and tags に
+  **`v*` を「tag」として追加**する。既定ではデフォルトブランチからのデプロイしか
+  許可されておらず、タグ起点のこのワークフローは `pages` ジョブだけ失敗する
+
+  ```sh
+  gh api -X POST repos/Fuku856/FormCounter/environments/github-pages/deployment-branch-policies \
+    -f name='v*' -f type=tag
+  ```
+
 - リポジトリが public であること。Chrome は `update.xml` と `.crx` を
   **未認証で**取りに行くため、private では自動更新が成立しません
 
@@ -41,9 +50,12 @@ node tests/run.js
 node tools/check-manifest.js
 node tools/bump-version.js 0.2.0
 git commit -am "v0.2.0"
-git tag v0.2.0
+git tag -a v0.2.0 -m "v0.2.0"
 git push --follow-tags
 ```
+
+タグは**注釈付き (`-a`)** で作ってください。軽量タグは `--follow-tags` では
+push されず、main だけ進んでリリースが走りません。
 
 そのあと確認するもの:
 
