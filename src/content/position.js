@@ -10,6 +10,45 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 FC.clamp = clamp;
 
 /**
+ * 画面に応じた寸法を決める。
+ *
+ * 計算するのは文字サイズ 1 つだけで、余白・角丸・最小幅は CSS の em が
+ * 派生させる。JS 側で持つ数値を 1 つに絞るための構成。
+ *
+ * CSS の clamp()/vw だけで済まない理由:
+ * vw はレイアウトビューポート基準なので、Android の既定
+ * （interactive-widget=resizes-visual）ではキーボードが開いても変化しない。
+ * つまり一番反応してほしい条件に対して CSS 単位は盲目になる。
+ * 位置決めでどうせ JS が要るので、同じ view から文字サイズも導いて整合させる。
+ *
+ * @param {{left:number,top:number,right:number,bottom:number}} view 可視領域
+ * @param {boolean} coarse 粗いポインタ（指）かどうか
+ * @returns {{font:number, gap:number, edge:number}}
+ */
+FC.computeTokens = function (view, coarse) {
+  const width = view.right - view.left;
+  const height = view.bottom - view.top;
+
+  // 画面幅ではなく入力デバイスで基準を決める。
+  // 幅が狭いだけの PC ウィンドウは依然として PC なので。
+  const base = coarse ? 13 : 11.5; // PLAN.md「パソコンでは小さく表示する」
+
+  // 幅による補正。PC では拡大しない（上限 1.0）。
+  const wf = clamp(width / 380, 0.85, coarse ? 1.12 : 1.0);
+
+  // 横向き＋キーボードで可視領域が細い帯になったときは少し小さくする
+  const hf = height < 260 ? 0.85 : 1;
+
+  const font = clamp(base * wf * hf, 9, 15);
+
+  return {
+    font,
+    gap: clamp(font * 0.5, 4, 8),
+    edge: clamp(font * 0.7, 6, 12),
+  };
+};
+
+/**
  * @param {object} args
  * @param {{top:number,right:number,bottom:number,left:number,width:number,height:number}} args.field
  *        入力欄の矩形（getBoundingClientRect と同じレイアウトビューポート座標）
