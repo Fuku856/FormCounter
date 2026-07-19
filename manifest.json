@@ -18,7 +18,14 @@
   "content_scripts": [
     {
       "matches": ["https://docs.google.com/forms/*", "https://docs.google.com/a/*/forms/*"],
-      "js": ["src/common/defaults.js", "src/common/counter.js"],
+      "js": [
+        "src/common/defaults.js",
+        "src/common/counter.js",
+        "src/content/fields.js",
+        "src/content/position.js",
+        "src/content/badge.js",
+        "src/content/main.js"
+      ],
       "run_at": "document_idle",
       "all_frames": true
     }

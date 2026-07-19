@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FormCounter 動作確認用フィクスチャ</title>
+    <style>
+      /* Google フォームの「構造」を再現することが目的で、
+         見た目の再現は目的ではない。難読化された class 名には
+         依存しない設計なので、class 名は意図的に本物と変えてある。 */
+      body {
+        font: 15px/1.6 system-ui, sans-serif;
+        margin: 0;
+        padding: 24px 16px 120px;
+        background: #f0ebf8;
+        color: #202124;
+      }
+      .form {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #dadce0;
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 12px;
+      }
+      .title {
+        font-size: 15px;
+        margin: 0 0 12px;
+        font-weight: 400;
+      }
+      .required::after {
+        content: ' *';
+        color: #d93025;
+      }
+      input[type='text'],
+      input[type='date'],
+      input[type='email'],
+      textarea {
+        font: inherit;
+        width: 100%;
+        box-sizing: border-box;
+        border: none;
+        border-bottom: 1px solid #dadce0;
+        padding: 8px 0;
+        background: transparent;
+        outline: none;
+      }
+      input:focus,
+      textarea:focus {
+        border-bottom: 2px solid #673ab7;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 24px;
+      }
+      .option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+      }
+      .option input[type='text'] {
+        flex: 1;
+      }
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+      }
+      button {
+        font: inherit;
+        background: #673ab7;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 10px 24px;
+        cursor: pointer;
+      }
+      .panel {
+        max-width: 640px;
+        margin: 0 auto 16px;
+        background: #202124;
+        color: #e8eaed;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+      .panel label {
+        margin-right: 16px;
+        cursor: pointer;
+      }
+      .panel code {
+        color: #8ab4f8;
+      }
+      .dark-demo {
+        background: #202124;
+        border-color: #5f6368;
+        color: #e8eaed;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div>
+        <strong>フィクスチャ</strong> — content script
+        をそのまま読み込んでいます。入力欄をクリックすると文字数バッジが出ます。
+      </div>
+      <div style="margin-top: 8px">
+        <label><input type="checkbox" id="opt-spaces" /> 空白を数える</label>
+        <label><input type="checkbox" id="opt-newlines" /> 改行を数える</label>
+        <span id="state"></span>
+      </div>
+    </div>
+
+    <div class="form" role="list">
+      <!-- 短答: バッジが出るべき -->
+      <div class="card" role="listitem">
+        <div class="title" role="heading" aria-level="3">お名前（短答）</div>
+        <input type="text" aria-labelledby="q1" />
+      </div>
+
+      <!-- 段落: バッジが出るべき -->
+      <div class="card" role="listitem">
+        <div class="title required" role="heading" aria-level="3">
+          志望動機をご記入ください（段落）
+        </div>
+        <textarea rows="4"></textarea>
+      </div>
+
+      <!-- ラジオ + その他: 「その他」欄にはバッジが出てはいけない -->
+      <div class="card" role="listitem">
+        <div class="title" role="heading" aria-level="3">きっかけ（ラジオ）</div>
+        <div role="radiogroup">
+          <div class="option" role="listitem">
+            <input type="radio" name="src" id="src1" /><label for="src1">検索</label>
+          </div>
+          <div class="option" role="listitem">
+            <input type="radio" name="src" id="src2" /><label for="src2">紹介</label>
+          </div>
+          <!-- 選択肢の listitem には見出しが無い → 除外される -->
+          <div class="option" role="listitem">
+            <input type="radio" name="src" id="src3" /><label for="src3">その他:</label>
+            <input type="text" aria-label="その他" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 日付 / メール: バッジが出てはいけない -->
+      <div class="card" role="listitem">
+        <div class="title" role="heading" aria-level="3">日付（自由記述ではない）</div>
+        <input type="date" />
+      </div>
+
+      <div class="card" role="listitem">
+        <div class="title" role="heading" aria-level="3">メール（type=email）</div>
+        <input type="email" />
+      </div>
+
+      <!-- 読み取り専用: バッジが出てはいけない -->
+      <div class="card" role="listitem">
+        <div class="title" role="heading" aria-level="3">読み取り専用</div>
+        <input type="text" readonly value="編集できません" />
+      </div>
+
+      <!-- 暗い背景での視認性確認 -->
+      <div class="card dark-demo" role="listitem">
+        <div class="title" role="heading" aria-level="3">暗い背景での見え方（段落）</div>
+        <textarea rows="3"></textarea>
+      </div>
+
+      <!-- 質問の外にある入力欄: バッジが出てはいけない -->
+      <div class="card">
+        <div class="title">質問の外（role=listitem の外）</div>
+        <input type="text" />
+      </div>
+
+      <div class="nav">
+        <span></span>
+        <button type="button">次へ</button>
+      </div>
+    </div>
+
+    <script src="../../src/common/defaults.js"></script>
+    <script src="../../src/common/counter.js"></script>
+    <script src="../../src/content/fields.js"></script>
+    <script src="../../src/content/position.js"></script>
+    <script src="../../src/content/badge.js"></script>
+    <script src="../../src/content/main.js"></script>
+    <script>
+      // 設定トグル（拡張機能では popup が担う役割をここで代用する）
+      const spaces = document.getElementById('opt-spaces');
+      const newlines = document.getElementById('opt-newlines');
+      const state = document.getElementById('state');
+      function apply() {
+        FC._setSettings({ countSpaces: spaces.checked, countNewlines: newlines.checked });
+        state.textContent = `countSpaces=${spaces.checked} countNewlines=${newlines.checked}`;
+      }
+      spaces.addEventListener('change', apply);
+      newlines.addEventListener('change', apply);
+      apply();
+    </script>
+  </body>
+</html>

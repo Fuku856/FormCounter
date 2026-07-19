@@ -8,7 +8,12 @@ const path = require('path');
 // content script と同じ「globalThis.FC にぶら下げる」流儀で読み込む
 require(path.join(__dirname, '..', 'src', 'common', 'defaults.js'));
 require(path.join(__dirname, '..', 'src', 'common', 'counter.js'));
-const cases = require(path.join(__dirname, 'cases.js'));
+require(path.join(__dirname, '..', 'src', 'content', 'position.js'));
+
+const cases = [
+  ...require(path.join(__dirname, 'cases.js')),
+  ...require(path.join(__dirname, 'cases-position.js')),
+];
 
 let pass = 0;
 const failures = [];
