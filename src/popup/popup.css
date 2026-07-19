@@ -1,0 +1,200 @@
+/* 設定画面のレイアウト。
+ *
+ * 分岐は「画面幅」ではなく (pointer: coarse) で行う。
+ *
+ * 理由: デスクトップの popup は「中身の大きさに合わせてウィンドウが決まる」
+ * (25x25 〜 800x600)。そのため 100vw や popup 自身の幅を見るメディアクエリは
+ * 循環参照になり、レイアウトが振動しうる。
+ * (pointer: coarse) は入力デバイスの性質なので popup の幅にフィードバックせず、
+ * 初回描画前に確定する。
+ */
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+/* 何があっても横スクロールを出さない（PLAN.md の要件） */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+body {
+  /* PC: 固定幅を与えると Chrome がこの幅で popup を開く */
+  width: 320px;
+  padding: 14px 16px;
+  overflow-x: hidden;
+  font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: #fff;
+  color: #202124;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.row input[type='checkbox'] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: #673ab7;
+  cursor: pointer;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.label-main {
+  font-weight: 500;
+}
+
+.label-sub {
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.note {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 11px;
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+/* --- スマートフォン（指での操作） ------------------------------------ */
+
+@media (pointer: coarse) {
+  html,
+  body {
+    width: 100%;
+  }
+
+  body {
+    /* 固定幅を解除してシェルいっぱいに広げる */
+    width: auto;
+    min-width: 0;
+    padding: 18px 20px;
+    font-size: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .row {
+    /* タッチターゲットを確保する */
+    min-height: 48px;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 10px;
+    margin: 0 -10px;
+  }
+
+  .row input[type='checkbox'] {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+  }
+
+  .label-sub {
+    font-size: 13px;
+  }
+
+  .note {
+    font-size: 13px;
+    margin-top: 18px;
+  }
+}
+
+/* 横向きは高さが足りないので 2 カラムにして、スクロールなしで収める。
+   回転時に JS なしで再評価される。 */
+@media (pointer: coarse) and (orientation: landscape) {
+  body {
+    padding: 12px 20px;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .title {
+    margin-bottom: 10px;
+  }
+
+  .settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+  }
+
+  .row {
+    min-height: 44px;
+  }
+
+  .note {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+}
+
+/* --- ダークモード ------------------------------------------------------ */
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #202124;
+    color: #e8eaed;
+  }
+
+  .row:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .note {
+    border-top-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .row input[type='checkbox'] {
+    accent-color: #b39ddb;
+  }
+}
+
+@media (forced-colors: active) {
+  .note {
+    border-top-color: CanvasText;
+  }
+}

@@ -6,5 +6,25 @@
   "extDesc": {
     "message": "Shows a live character count on Google Forms free-text fields.",
     "description": "Extension description"
+  },
+  "optSpaces": {
+    "message": "Count spaces",
+    "description": "Setting: include whitespace in the count"
+  },
+  "optSpacesHint": {
+    "message": "Spaces (incl. full-width), tabs",
+    "description": "Hint for the spaces setting"
+  },
+  "optNewlines": {
+    "message": "Count line breaks",
+    "description": "Setting: include newlines in the count"
+  },
+  "optNewlinesHint": {
+    "message": "One character per line break",
+    "description": "Hint for the newlines setting"
+  },
+  "popupNote": {
+    "message": "Focus a free-text field in Google Forms to see its character count. Your input is never stored or sent anywhere.",
+    "description": "Explanatory note at the bottom of the popup"
   }
 }

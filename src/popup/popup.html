@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <!-- この meta は必須。無いと Android 側のシェルは 980px でレイアウトし、
+         縮小表示＋横スクロールになる（PLAN.md の要件違反）。 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FormCounter</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1 class="title" id="title">FormCounter</h1>
+
+    <div class="settings">
+      <label class="row">
+        <input type="checkbox" id="countSpaces" />
+        <span class="label">
+          <span class="label-main" id="label-spaces">空白を数える</span>
+          <span class="label-sub" id="hint-spaces">半角・全角スペース、タブ</span>
+        </span>
+      </label>
+
+      <label class="row">
+        <input type="checkbox" id="countNewlines" />
+        <span class="label">
+          <span class="label-main" id="label-newlines">改行を数える</span>
+          <span class="label-sub" id="hint-newlines">改行 1 つにつき 1 文字</span>
+        </span>
+      </label>
+    </div>
+
+    <p class="note" id="note">
+      Google フォームの自由記述欄を選ぶと、文字数が表示されます。入力内容は保存も送信もしません。
+    </p>
+
+    <script src="../common/defaults.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
