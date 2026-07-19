@@ -6,10 +6,6 @@
 (function () {
   const FC = globalThis.FC;
 
-  const FONT_SIZE = 11.5; // PC 向け固定値（PLAN.md「小さく表示する」）
-  const GAP = 6;
-  const EDGE = 8;
-
   let settings = FC.DEFAULTS;
   let field = null; // 現在フォーカスしている入力欄
   let resizeObserver = null;
@@ -47,14 +43,35 @@
 
   // --- 可視領域 -----------------------------------------------------------
 
+  // Android の Chrome 108 以降は既定で interactive-widget=resizes-visual。
+  // キーボードが開いてもレイアウトビューポートは縮まない（innerHeight は不変）。
+  // 縮むのは visual viewport だけなので、position: fixed の要素は
+  // 何もしなければキーボードの裏に隠れる。
+  //
+  // CSS だけの回避策は無い。interactive-widget=resizes-content も
+  // env(keyboard-inset-height) も「ページ側の opt-in」であり、
+  // Google の viewport meta を書き換えれば Forms 自身のレイアウトを壊す。
+  // したがって毎フレーム visualViewport で手動補正する。
+  //
+  // offsetLeft/offsetTop はレイアウトビューポート内のオフセット、つまり
+  // getBoundingClientRect と同じ座標空間なので変換なしで合成できる。
+  // （pageTop は文書基準なので使わない。）
   function currentView() {
+    const vv = window.visualViewport;
+    if (!vv) {
+      return { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+    }
     return {
-      left: 0,
-      top: 0,
-      right: window.innerWidth,
-      bottom: window.innerHeight,
+      left: vv.offsetLeft,
+      top: vv.offsetTop,
+      right: vv.offsetLeft + vv.width,
+      bottom: vv.offsetTop + vv.height,
     };
   }
+
+  // 指での操作かどうか。画面幅ではなく入力デバイスで判定する。
+  const coarsePointer =
+    typeof matchMedia === 'function' ? matchMedia('(pointer: coarse)') : null;
 
   // --- 更新ループ ---------------------------------------------------------
 
@@ -92,17 +109,19 @@
       return;
     }
 
-    // 数値の反映を先に行う。桁数が変わるとバッジの幅が変わるため、
+    const tokens = FC.computeTokens(view, !!(coarsePointer && coarsePointer.matches));
+
+    // 数値と文字サイズの反映を先に行う。どちらもバッジの幅を変えるので、
     // 実測はそのあとでなければならない。
-    FC.setFontSize(FONT_SIZE);
+    FC.setFontSize(tokens.font);
     FC.setCount(FC.countCharacters(field.value, settings));
 
     const placement = FC.computePlacement({
       field: rect,
       view,
       badge: FC.measureBadge(),
-      gap: GAP,
-      edge: EDGE,
+      gap: tokens.gap,
+      edge: tokens.edge,
       singleLine: field.tagName === 'INPUT',
     });
 
@@ -168,6 +187,13 @@
   window.addEventListener('resize', schedule, passive);
   window.addEventListener('orientationchange', schedule, passive);
   document.addEventListener('visibilitychange', schedule, passive);
+
+  // キーボードの開閉・ピンチ操作・ブラウザ UI の出入りを拾う。
+  // モバイルではこれが最も重要な再配置のきっかけになる。
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', schedule, passive);
+    window.visualViewport.addEventListener('scroll', schedule, passive);
+  }
 
   // ページ表示時点で既にフォーカスがある場合（BFCache からの復帰など）
   if (FC.isFreeTextAnswer(document.activeElement)) attach(document.activeElement);

@@ -178,6 +178,41 @@ var FC_CASES_POSITION = (function () {
     t('全組み合わせで可視領域内に収まる', () => allInside, true);
   }
 
+  // --- computeTokens: 画面に応じた寸法 ------------------------------------
+
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const tokens = (w, h, coarse) => FC.computeTokens(view(w, h), coarse);
+
+  // 実装計画に載せた表と一致すること
+  t('PC 1280x800 の文字サイズ', () => round1(tokens(1280, 800, false).font), 11.5);
+  t('PC 幅狭 400px でも小さいまま', () => round1(tokens(400, 800, false).font), 11.5);
+  t('スマホ 360 縦の文字サイズ', () => round1(tokens(360, 640, true).font), 12.3);
+  t('スマホ 360+キーボードの文字サイズ', () => round1(tokens(360, 340, true).font), 12.3);
+  t('スマホ 412 縦の文字サイズ', () => round1(tokens(412, 915, true).font), 14.1);
+  t('スマホ 640 横+キーボードの文字サイズ', () => round1(tokens(640, 140, true).font), 12.4);
+
+  // 性質
+  t('指のほうが PC より大きい', () => tokens(360, 640, true).font > tokens(360, 640, false).font, true);
+  t('PC は幅が広くても拡大しない', () => tokens(2560, 1440, false).font, 11.5);
+  t('細い帯では小さくなる', () => tokens(640, 140, true).font < tokens(640, 800, true).font, true);
+  t('文字サイズの下限は 9', () => tokens(1, 1, false).font >= 9, true);
+  t('文字サイズの上限は 15', () => tokens(9999, 9999, true).font <= 15, true);
+  t('gap は 4..8 に収まる', () => {
+    const g = [tokens(1, 1, false).gap, tokens(9999, 9999, true).gap];
+    return g[0] >= 4 && g[1] <= 8;
+  }, true);
+  t('edge は 6..12 に収まる', () => {
+    const e = [tokens(1, 1, false).edge, tokens(9999, 9999, true).edge];
+    return e[0] >= 6 && e[1] <= 12;
+  }, true);
+
+  // 縦横の回転で寸法が見直されること（同じ端末を回しただけ）
+  t('回転で寸法が変わる', () => {
+    const portrait = tokens(360, 640, true);
+    const landscape = tokens(640, 360, true);
+    return portrait.font !== landscape.font;
+  }, true);
+
   return cases;
 })();
 
