@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FormCounter ユニットテスト</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font: 14px/1.6 system-ui, sans-serif;
+        margin: 0;
+        padding: 24px;
+        max-width: 900px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 16px;
+      }
+      #summary {
+        font-weight: 600;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+      #summary.pass {
+        background: #0f5132;
+        color: #d1e7dd;
+      }
+      #summary.fail {
+        background: #842029;
+        color: #f8d7da;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 6px 10px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+      }
+      th {
+        font-size: 12px;
+        opacity: 0.7;
+      }
+      td.num {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        width: 5em;
+      }
+      tr.fail {
+        background: rgba(220, 53, 69, 0.15);
+      }
+      .mark {
+        width: 2em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>FormCounter ユニットテスト</h1>
+    <div id="summary">実行中…</div>
+    <table>
+      <thead>
+        <tr>
+          <th class="mark"></th>
+          <th>テスト</th>
+          <th class="num">期待値</th>
+          <th class="num">実際</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script src="../src/common/defaults.js"></script>
+    <script src="../src/common/counter.js"></script>
+    <script src="cases.js"></script>
+    <script>
+      (function () {
+        const rows = document.getElementById('rows');
+        let pass = 0;
+
+        for (const c of FC_CASES) {
+          let actual;
+          try {
+            actual = c.run();
+          } catch (e) {
+            actual = '例外: ' + e.message;
+          }
+          const ok = actual === c.expected;
+          if (ok) pass++;
+
+          const tr = document.createElement('tr');
+          if (!ok) tr.className = 'fail';
+          const cells = [ok ? '✓' : '✗', c.name, c.expected, actual];
+          cells.forEach((v, i) => {
+            const td = document.createElement('td');
+            if (i === 0) td.className = 'mark';
+            if (i >= 2) td.className = 'num';
+            td.textContent = String(v);
+            tr.appendChild(td);
+          });
+          rows.appendChild(tr);
+        }
+
+        const summary = document.getElementById('summary');
+        const allPass = pass === FC_CASES.length;
+        summary.className = allPass ? 'pass' : 'fail';
+        summary.textContent = `${pass}/${FC_CASES.length} 件成功` + (allPass ? '' : ' — 失敗あり');
+      })();
+    </script>
+  </body>
+</html>
