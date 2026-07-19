@@ -16,6 +16,13 @@ var FC_CASES = (function () {
   const FAMILY = [0x1f468, 0x1f469, 0x1f467, 0x1f466]
     .map((cp) => String.fromCodePoint(cp))
     .join(ZWJ); // 👨‍👩‍👧‍👦
+  const VS16 = String.fromCodePoint(0xfe0f); // 異体字セレクタ（絵文字表示）
+  const HEART = String.fromCodePoint(0x2764) + VS16; // ❤️
+  const KEYCAP_ONE = '1' + VS16 + String.fromCodePoint(0x20e3); // 1️⃣
+  const RI_J = String.fromCodePoint(0x1f1ef); // 地域表示記号 J（単体では国旗にならない）
+  const RI_P = String.fromCodePoint(0x1f1f5); // 地域表示記号 P
+  const FLAG_JP = RI_J + RI_P; // 🇯🇵
+  const DAKUTEN = String.fromCodePoint(0x3099); // 結合濁点（絵文字ではない合成）
 
   const OFF = { countSpaces: false, countNewlines: false }; // 既定値
   const SPACES_ON = { countSpaces: true, countNewlines: false };
@@ -80,15 +87,38 @@ var FC_CASES = (function () {
 
   // --- コードポイント数（UTF-16 の length との差） ---
   // UTF-16 の .length は 2 を返すが、コードポイント数なので 1 になる
-  // UTF-16 の .length は 2 を返すが、コードポイント数なので 1 になる
   raw('前提: 𠮷 の .length は 2', () => TSUCHIYOSHI.length, 2);
   t('追加面の漢字 𠮷 は 1 文字', TSUCHIYOSHI, OFF, 1);
   t('𠮷 を含む文は 3 文字', TSUCHIYOSHI + '野家', OFF, 3);
+
+  // --- 絵文字は絵柄 1 つで 1 文字（何コードポイントでできていても） ---
   t('絵文字 1 つは 1 文字', THUMBS_UP, OFF, 1);
-  // 仕様上のトレードオフ（README に明記）: 合成絵文字は見た目より多く数える
-  t('肌色修飾つき絵文字は 2 文字', THUMBS_UP + SKIN_TONE, OFF, 2);
-  t('ZWJ 合成絵文字（家族）は 7 文字', FAMILY, OFF, 7);
+  t('肌色修飾つき絵文字は 1 文字', THUMBS_UP + SKIN_TONE, OFF, 1);
+  t('ZWJ 合成絵文字（家族）は 1 文字', FAMILY, OFF, 1);
+  t('異体字セレクタつき絵文字 ❤️ は 1 文字', HEART, OFF, 1);
+  t('keycap 1️⃣ は 1 文字', KEYCAP_ONE, OFF, 1);
+  t('国旗 🇯🇵 は 1 文字', FLAG_JP, OFF, 1);
   t('絵文字と日本語の混在', 'やった' + THUMBS_UP, OFF, 4);
+  t('合成絵文字を並べる', FAMILY + HEART + KEYCAP_ONE, OFF, 3);
+  t('絵文字と空白の混在（空白を数えない）', FAMILY + ' ' + HEART, OFF, 2);
+  t('絵文字と空白の混在（空白を数える）', FAMILY + ' ' + HEART, SPACES_ON, 3);
+  t('絵文字と改行の混在（改行を数える）', FAMILY + '\n' + HEART, NEWLINES_ON, 3);
+
+  // --- 絵文字以外の合成は据え置き（コードポイント数のまま） ---
+  t('結合濁点は合成せず 2 文字', 'か' + DAKUTEN, OFF, 2);
+
+  // --- 空白の除去がクラスタを新しく作らないこと ---
+  // 「除去してから分割」だと、空白で隔てられていた地域表示記号 2 つが
+  // 隣接して国旗 1 つに化ける。分割してから分類することで防いでいる。
+  t('空白を挟んだ地域表示記号は結合しない', RI_J + ' ' + RI_P, OFF, 2);
+  t('空白を挟んだ地域表示記号（空白を数える）', RI_J + ' ' + RI_P, SPACES_ON, 3);
+  t('改行を挟んだ地域表示記号は結合しない', RI_J + '\n' + RI_P, OFF, 2);
+  t('隣接した地域表示記号は国旗 1 つ', FLAG_JP, OFF, 1);
+
+  // --- 改行 1 つにつき 1 文字（README の表記どおり） ---
+  // CRLF は書記素クラスタ 1 つなので、改行 1 つとして数える。
+  t('CRLF を数えると 1 つの改行', 'あ\r\nい', NEWLINES_ON, 3);
+  t('CRLF 連続を数える', 'a\r\n\r\nb', NEWLINES_ON, 4);
 
   // --- 設定オブジェクトが不正でも既定（数えない）に倒れる ---
   t('settings 省略時は数えない', 'あ い', undefined, 2);

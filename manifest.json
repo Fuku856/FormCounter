@@ -4,7 +4,7 @@
   "description": "__MSG_extDesc__",
   "version": "0.1.0",
   "default_locale": "ja",
-  "minimum_chrome_version": "111",
+  "minimum_chrome_version": "112",
 
   "permissions": ["storage"],
 

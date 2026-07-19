@@ -49,6 +49,35 @@ FC.computeTokens = function (view, coarse) {
 };
 
 /**
+ * 入力欄の矩形が可視領域と交差しているか。
+ *
+ * computePlacement は最後に必ず座標を可視領域内へ clamp する。これは
+ * 「バッジを画面内に収める」ための正しい処理だが、欄が画面の外にある場合には
+ * 画面外の座標を画面の端へ引き戻してしまう。その結果、スクロールで欄が
+ * 流れ去ったあともバッジが端に貼り付き、無関係な質問の上に残る。
+ * 配置を計算する前にここで弾く。
+ *
+ * 一部でも交差していれば true。欄の上端だけが画面に残っている状態でも
+ * 文字数は意味を持つので、完全に外れた場合だけ false にする。
+ *
+ * 見ているのは可視領域との交差だけで、祖先の overflow による切り取りや
+ * 他の要素による重なりまでは判定しない。
+ *
+ * @param {object} args
+ * @param {{top:number,right:number,bottom:number,left:number}} args.field 入力欄の矩形
+ * @param {{left:number,top:number,right:number,bottom:number}} args.view 可視領域
+ * @returns {boolean}
+ */
+FC.isFieldVisible = function ({ field, view }) {
+  return (
+    field.bottom > view.top &&
+    field.top < view.bottom &&
+    field.right > view.left &&
+    field.left < view.right
+  );
+};
+
+/**
  * @param {object} args
  * @param {{top:number,right:number,bottom:number,left:number,width:number,height:number}} args.field
  *        入力欄の矩形（getBoundingClientRect と同じレイアウトビューポート座標）

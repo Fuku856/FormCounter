@@ -113,6 +113,15 @@
       return;
     }
 
+    // スクロールで欄が画面の外へ流れ去った場合。ここで返さないと
+    // computePlacement の clamp が画面外の座標を端へ引き戻し、
+    // バッジが無関係な質問の上に貼り付いたまま残る。
+    // 実測（下の計測とサイズ確定）より前に弾いて無駄も省く。
+    if (!FC.isFieldVisible({ field: rect, view })) {
+      FC.hideBadge();
+      return;
+    }
+
     const tokens = FC.computeTokens(view, !!(coarsePointer && coarsePointer.matches));
 
     // 数値と文字サイズの反映を先に行う。どちらもバッジの幅を変えるので、
