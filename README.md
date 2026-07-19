@@ -59,11 +59,20 @@ Chrome 111 以上が必要です。Firefox には対応していません。
 依存パッケージはありません。
 
 ```sh
-node tests/run.js        # ユニットテスト（Node）
-node tools/make-icons.js # アイコン PNG を再生成
+node tests/run.js                # ユニットテスト（Node）
+node tools/check-manifest.js     # manifest の参照先・翻訳の欠落を検出
+node tools/make-icons.js         # アイコン PNG を再生成
+node tools/make-popup-preview.js # 設定画面のプレビューを生成
 ```
 
 ブラウザで実行する場合は `tests/unit.html` を開いてください。
+`tests/fixtures/form.html` は content script をそのまま読み込む動作確認用の
+ページで、Google フォームの**構造**（ARIA）だけを再現しています。
+
+設定画面は `chrome://extensions` 経由でないと `chrome.storage` が無く動かず、
+`(pointer: coarse)` も PC では再現できません。`make-popup-preview.js` は
+CSS を inline 展開した PC 版・スマホ版を出力するので、見た目だけは
+ブラウザで確認できます。
 
 ### 構成
 

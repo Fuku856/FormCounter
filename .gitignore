@@ -13,6 +13,9 @@ desktop.ini
 *.crx
 *.pem
 
+# tools/make-popup-preview.js の生成物
+tests/_preview-*.html
+
 # 本プロジェクトはビルドステップを持たない。
 # node_modules は補助スクリプトを試す場合にのみ現れる。
 node_modules/
