@@ -1,0 +1,93 @@
+# 配布用 zip を作って GitHub Release に添付する。
+# Actions タブから手動で実行し、タグ名を入力する。
+#
+#   既存タグでやり直す … 「Use workflow from」でそのタグを選び、同じ名前を入力
+#   新しく切る         … main を選び、新しいタグ名を入力（このワークフローが作成する）
+#
+# zip は「パッケージ化されていない拡張機能を読み込む」で使う。展開したフォルダを
+# そのまま指定できるよう、余計なファイルは入れない。
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'タグ名（例: v0.2.0）。存在しなければ実行対象のコミットに作成します'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # 既存タグの有無を判定するため全履歴が要る
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: 検証
+        run: |
+          node tools/check-manifest.js
+          node tests/run.js
+
+      - name: タグと manifest の version が一致するか確認
+        id: check
+        run: |
+          tag='${{ inputs.tag }}'
+          case "$tag" in
+            v*) ;;
+            *) echo "タグは v で始めてください（入力: $tag）" >&2; exit 1 ;;
+          esac
+          version=$(node -p "require('./manifest.json').version")
+          if [ "${tag#v}" != "$version" ]; then
+            echo "タグ $tag に対し manifest の version は $version です。" >&2
+            echo "node tools/bump-version.js ${tag#v} を実行して push してから再実行してください。" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: タグが無ければ作成する
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "タグ $TAG は既にあります。作成せず、そのまま使います。"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "$TAG"
+            git push origin "$TAG"
+            echo "タグ $TAG を $(git rev-parse --short HEAD) に作成しました。"
+          fi
+
+      - name: zip を作る
+        env:
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          mkdir -p dist/formcounter
+          cp -r manifest.json _locales icons src dist/formcounter/
+          (cd dist && zip -qr "formcounter-${VERSION}.zip" formcounter)
+          # 空の zip を配ってしまうと、展開しても読み込めない紛らわしい失敗になる。
+          test -s "dist/formcounter-${VERSION}.zip"
+          unzip -l "dist/formcounter-${VERSION}.zip"
+
+      - name: Release に添付する
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.check.outputs.tag }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          asset="dist/formcounter-${VERSION}.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # やり直し時に古い zip が残らないよう上書きする。
+            gh release upload "$TAG" "$asset" --clobber
+          else
+            gh release create "$TAG" "$asset" --title "$TAG" --generate-notes
+          fi
