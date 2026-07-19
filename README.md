@@ -95,4 +95,4 @@ content script は `"type": "module"` に対応しないため、`import` は使
 
 ## ライセンス
 
-未定（現時点では非公開リポジトリ）。公開する場合に決めます。
+MIT License
