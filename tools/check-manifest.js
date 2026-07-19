@@ -29,6 +29,13 @@ try {
 
 if (manifest.manifest_version !== 3) errors.push('manifest_version は 3 である必要があります');
 
+// --- 自己ホスト配布（tools/crx-id.js と docs/RELEASE.md を参照） ---
+// key が無いと、パッケージ化されていない拡張機能として読み込んだ開発機だけ
+// 拡張 ID が変わり、.crx 版と設定を共有できなくなる。気づきにくいので弾く。
+if (manifest.update_url && !manifest.key) {
+  errors.push('update_url を使うなら key も必要です（node tools/crx-id.js <鍵.pem> で取得）');
+}
+
 // --- アイコン ---
 for (const [size, p] of Object.entries(manifest.icons || {})) {
   mustExist(p, `icons.${size}`);
